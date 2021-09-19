@@ -236,6 +236,8 @@ struct Layer
 			envelop.expand((Box2D&)pGeometry->getEnvelop());
 	}
 
+	
+
 	//设置图层范围
 	void setEnvelop(double xmin, double ymin, double xmax, double ymax)
 	{
@@ -246,6 +248,14 @@ struct Layer
 
 	//获取图层包含的图形对象数量
 	int getGeometryCount() { return geometrySet.size(); }
+	// 监测当前图层数量是否为空
+	bool EmptyGeometry()
+	{
+		if (getGeometryCount())
+			return false;
+		else
+			return true;
+	}
 
 	vector<Geometry2D*> geometrySet;//图形对象集合
 	Box2D envelop;//图层范围对应的包围盒
@@ -279,6 +289,8 @@ struct Dataset
 	{
 		layerSet.push_back(pLayer);
 	}
+
+	
 
 	
 	//图层集合

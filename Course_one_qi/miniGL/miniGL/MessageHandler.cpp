@@ -149,16 +149,16 @@ void handleMenuMessage(int menuID)
 	}
 	case ID_RESET:
 	{
+		// 清空当前画布，添加一个新的图层
 		setRubberMode(rmNone);
 		g_OperationType = otNone;
-		try
+		if (g_player->EmptyGeometry()) {} // 若当前图层为空则不添加新图层
+		else
 		{
-			delete g_Dataset_f;
-			refreshWindow();
+			g_player = new Layer();
+			g_Dataset.addLayer(g_player);
 		}
-		catch (exception e)
-		{
-		}
+		refreshWindow();
 		break;
 	}
 
@@ -331,10 +331,13 @@ void drawDataset();
 void drawLayer(Layer* player);
 void drawDataset()
 {
+	drawLayer(g_Dataset.layerSet.back());
+	/*
 	for (int s = g_Dataset.getLayerCount(), i = s - 1; i >= 0; --i)
 	{
 		drawLayer(g_Dataset[i]);
 	}
+	*/
 }
 void drawLayer(Layer* player)
 {
