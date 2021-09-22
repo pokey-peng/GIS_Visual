@@ -5,6 +5,9 @@
 #ifndef _MYGRAPHIC_H
 #define _MYGRAPHIC_H
 #include "Graphic.h"
+#include <vector>
+#include "DrawState.h"
+using namespace std;
 
 
 /*线的光栅化--中点Bresenham算法*/
@@ -25,6 +28,14 @@ void CirclePlot(int x, int y, int xa,int ya, unsigned color);
 /*画椭圆四个对应点*/
 void EllipsePlot(int xCenter, int yCenter, int x, int y, unsigned color);
 
+
+void GetYMinMax(PixelPoint* data,int size,int ymin, int ymax);
+/*初始化新边表*/
+void InitET(vector<vector<State::tagEDGE>>& etEDGE,PixelPoint* data,int size,int ymin,int ymax);
+/*初始化活动边表*/
+void InitAET();
+/*多边形扫描填充*/
+void ScanLineFill(vector<State::tagEDGE>& aetEDGE, vector<vector<State::tagEDGE>>& etEDGE, int ymin, int ymax,unsigned color);
 
 #endif // !_MYGRAPHIC_H
 

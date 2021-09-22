@@ -3,6 +3,9 @@
 #include "DrawState.h"
 #include "MyGraphic.h"
 #include <algorithm>
+#include <vector>
+//using namespace State;
+using namespace std;
 
 void Raster::drawPoint(int x, int y, unsigned color)
 {
@@ -33,8 +36,13 @@ void Raster::drawPolyline()
 void Raster::drawPolygon(PixelPoint* data, int size, unsigned color)
 {
 	//TODO drawPolygon(未实现)
-	data[0].x = 3;
-
+	int ymin = 0;
+	int ymax = 0;
+	GetYMinMax(data,size,ymin,ymax);
+	vector<State::tagEDGE> aetEDGE; // 活性边表AET
+	vector<vector<State::tagEDGE>> etEDGE(ymax-ymin+1); // 边表
+	InitET(etEDGE,data, size,ymin,ymax);
+	ScanLineFill(aetEDGE,etEDGE,ymin,ymax,color);
 }
 
 void Raster::drawPolygonOutline()
@@ -54,17 +62,15 @@ void Raster::drawRectangleOutline()
 
 void Raster::drawCircle(double x, double y, double r, unsigned color)
 {
-	//TODO drawCircle(未实现)
+	//TODO drawCircle(未完善)
 	//setOrig(x, y);
 	// MidBresenham algorithm
-	int x0, y0, d,xCenter,yCenter;
+	double x0, y0, d;
 
 	x0 = 0;
 	y0 = r;
 	d = 1 - r;
-	xCenter = x;
-	yCenter = y;
-	setPixel(xCenter, xCenter + y0, color);
+	CirclePlot(round(x), round(y),round(x0),round(y0), color);
 	while (x0 <= y0)
 	{
 		if (d < 0)
@@ -77,7 +83,7 @@ void Raster::drawCircle(double x, double y, double r, unsigned color)
 			y0--;
 		}
 		x0++;
-		CirclePlot(xCenter, yCenter, x0, y0, color);
+		CirclePlot(round(x), round(y), round(x0), round(y0), color);
 	}
 }
 
@@ -117,96 +123,50 @@ void Raster::drawCircleOutline(double x, double y, double r, unsigned color)
 
 void Raster::drawEllipse(double xCenter, double yCenter, double width, double height, unsigned color)
 {
-	/*
-	int ra = width / 2;
-	int rb = height / 2;
-	int ra2 = ra * ra;
-	int rb2 = rb * rb;
-	int px = 0;
-	int py = 2 * ra2 * rb;
-	int xD = 0;
-	int yD = rb;
-	
-	int xCenter = x;
-	int yCenter = y;
-	EllipsePlot(xCenter, yCenter, xD, yD,color);
-	double p = rb2 - (ra2 * rb) + 0.25 * ra2;
-	while (ra2*(yD - 0.5) > rb2*(xD + 1))
-	{
-		if (p < 0)
-		{
-			p += rb2  * (xD + xD + 3);
-		}
-		else
-		{
-			p += rb2 * (xD + xD + 3) + ra2 * (-yD -yD + 2);
-			yD--;
-		}
-		xD++;
-		EllipsePlot(xCenter, yCenter, xD, yD, color);
-	}
-	p = rb2 * (xD + 0.5) * (x + 0.5) + ra2 * (yD - 1) * (y - 1) - ra2 * rb2;
-	while (yD > 0)
-	{
-		if (p > 0)
-		{
-			p += rb2 * (xD + xD + 2) + ra2 * (3 - yD - yD);
-			xD++;
-		}
-		else
-		{
-			p += ra2 * (3 - yD - yD);
-		}
-		yD--;
-		EllipsePlot(xCenter, yCenter, xD, yD, color);
-	}
-	*/
-	int Rx = width / 2;
-	int Ry = height / 2;
-	int Rx2 = Rx * Rx;
-	int Ry2 = Ry * Ry;
-	int twoRx2 = 2 * Rx2;
-	int twoRy2 = 2 * Ry2;
-	int p;
-	int x = 0;
-	int y = Ry;
-	int px = 0;
-	int py = twoRx2 * y;
-	EllipsePlot(x, yCenter, x, y,color);
+	double Rx = width / 2, Ry = height / 2; // 椭圆半径x轴Rx, y轴半径Ry,
+	double Rx2 = Rx * Rx, Ry2 = Ry * Ry;   // 椭圆半径的平方
+	double twoRx2 = 2 * Rx2, twoRy2 = 2 * Ry2;// 两倍的椭圆半径平方
+	double x = 0, y = Ry;          // 相对中心偏移量x,y
+	double d;  // 中点值
+	double px = twoRy2; 
+	double py = twoRx2 * y - Rx2;
+	EllipsePlot(round(xCenter), round(yCenter), round(x), round(y), color);
 	/*区域1*/
-	p = round(Ry2 - (Rx2 * Ry) + (0.25 * Rx2));
+	d = Ry2 - (Rx2 * Ry) + (0.25 * Rx2);
 	while (px < py)
 	{
 		px += twoRy2;
-		if (p < 0)
+		if (d < 0)
 		{
-			p += Ry2 + px;
+			d += Ry2 + px;
 		}
 		else
 		{
+
+			d += Ry2 + px - py + Rx2;
 			y--;
 			py -= twoRx2;
-			p += Ry2 + px - py;
 		}
 		x++;
-		EllipsePlot(xCenter, yCenter, x, y,color);
+		EllipsePlot(round(xCenter), round(yCenter), round(x), round(y), color);
 	}
 	/*区域2*/
-	p = round(Ry2 * (x + 0.5) * (x + 0.5) + Rx2 * (y - 1) * (y - 1) - Rx2 * Ry2);
+	d = Ry2 * (x + 0.5) * (x + 0.5) + Rx2 * (y - 1) * (y - 1) - Rx2 * Ry2;
 	while (y > 0)
 	{
 		py -= twoRx2;
-		if (p > 0) {
-			p += Rx2 - py;
+		if (d < 0) {
+
+			d += Rx2 - py + px;
+			x++;
+			px += twoRx2;
 		}
 		else
 		{
-			x++;
-			px += twoRx2;
-			p += Rx2 - py + px;
+			d += Rx2 - py;
 		}
 		y--;
-		EllipsePlot(xCenter, yCenter, x, y,color);
+		EllipsePlot(round(xCenter), round(yCenter), round(x), round(y), color);
 	}
 
 }

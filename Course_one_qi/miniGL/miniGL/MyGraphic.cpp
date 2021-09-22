@@ -2,6 +2,10 @@
 #include "MyGraphic.h"
 #include "Graphic.h"
 #include <vector>
+#include "DrawState.h"
+#include <algorithm>
+//using namespace State;
+using namespace std;
 extern Color g_Color; // 线段颜色
 extern PixelPoint g_Points[100]; // 存放需要绘制的点的数组
 extern int g_PointCout;  //点的个数
@@ -155,4 +159,113 @@ void EllipsePlot(int xCenter, int yCenter, int x, int y, unsigned color)
 	setPixel(xCenter - x, yCenter + y, color);
 	setPixel(xCenter + x, yCenter - y, color);
 	setPixel(xCenter - x, yCenter - y, color);
+}
+
+void GetYMinMax(PixelPoint* data, int size,int& ymin, int& ymax)
+{
+	ymin = data[0].y;
+	ymax = data[0].y;
+	for (int i = 1; i < size; i++)
+	{
+		if (data[i].y > ymax)
+			ymax = data[i].y;
+		if (data[i].y < ymin)
+			ymin = data[i].y;
+	}
+}
+void InitET(vector<vector<State::tagEDGE>>& etEDGE, PixelPoint* data, int size,int ymin,int ymax)
+{
+	State::tagEDGE edgeNode;
+	// 遍历所有点
+	for (int i = 0; i < size; i++)
+	{
+		PixelPoint ps = data[i]; // 当前边起点
+		PixelPoint pe = data[(i + 1) % size]; // 当前边中点
+		PixelPoint pss = data[(i - 1 + size) % size]; // 起点相邻边起点
+		PixelPoint pee = data[(i + 2) % size]; // 终点相邻边终点
+		// 水平线不处理
+		if (ps.y != pe.y)
+		{
+			edgeNode.dx = double(pe.x - ps.y) / double(pe.y - ps.y);
+			if (pe.y > ps.y)
+			{
+				edgeNode.x = ps.x;
+				edgeNode.ymax = pee.y >= pe.y ? pe.y - 1 : pe.y;
+				etEDGE[ps.y - ymin].push_back(edgeNode);
+			}
+			else
+			{
+				edgeNode.x = pe.x;
+				if (pss.y >= ps.y)
+					edgeNode.ymax = ps.y - 1;
+				else
+					edgeNode.ymax = ps.y - 1;
+				etEDGE[pe.y-ymin].push_back(edgeNode);
+			}
+		}
+
+	}
+
+}
+void InitAET()
+{
+
+}
+// 升序排列
+bool LessSort(State::tagEDGE a, State::tagEDGE b)
+{
+	return (a.x < b.x ? true : (a.dx < b.dx ? true : false));
+}
+void InsertAET(vector<State::tagEDGE>& e,vector<State::tagEDGE>& ae)
+{
+	if (e.size())
+	{
+		sort(e.begin(), e.end(), LessSort);
+		ae = e;
+	}
+	return;
+	
+}
+void ScanFillLine(vector<State::tagEDGE>& aetEDGE, int y, unsigned color)
+{
+	int size = aetEDGE.size();
+	int i = 1;
+	while (i < size)
+	{
+		for (int x0 = aetEDGE[i - 1].x; x0 < aetEDGE[i].x; x0++)
+		{
+			setPixel(x0, y, color);
+		}
+	}
+	
+}
+void RemoveNonAET(vector<State::tagEDGE>& aetEDGE,int y)
+{
+	for (vector<State::tagEDGE>::iterator iter=aetEDGE.begin(); iter!=aetEDGE.end(); iter++)
+	{
+		if (y == (*iter).ymax)
+		{
+			iter = aetEDGE.erase(iter);
+			iter--;
+		}
+	}
+}
+void UpdateMethod(State::tagEDGE e)
+{
+	e.x += e.dx;
+}
+void UpdateAET(vector<State::tagEDGE>& aetEDGE)
+{
+	for_each(aetEDGE.begin(), aetEDGE.end(), UpdateMethod);
+}
+void ScanLineFill(vector<State::tagEDGE>& aetEDGE, vector<vector<State::tagEDGE>>& etEDGE, int ymin, int ymax, unsigned color)
+{
+	for (int y = ymin; y <= ymax; y++)
+	{
+		InsertAET(etEDGE[y - ymin], aetEDGE);
+		ScanFillLine(aetEDGE, y, color);
+		RemoveNonAET(aetEDGE,y);
+		UpdateAET(aetEDGE);
+		continue;
+	}
 }

@@ -6,28 +6,28 @@
 #include "MyGeoDefine.h"
 #include "MyGeometryLibrary.h"
 #include "MyRaster.h"
-
+#include "DrawState.h"
 using namespace std;
-
 enum OperationType {
 	otNone, otDrawRectangle, otDrawRectangleOutline,
-	otDrawLine, otDrawPolyline, otDrawPolygon, otDrawPolygonOutline, 
+	otDrawLine, otDrawPolyline, otDrawPolygon, otDrawPolygonOutline,
 	otDrawCircle, otDrawEllipse,
 	//像素画图
-	otPixel,ot10Network,ot20Network
+	otPixel, ot10Network, ot20Network
 
 };
+OperationType g_OperationType = otNone; // 当前操作类型
+
 // 定义一个数据集，存放图层
 Dataset g_Dataset;
 Dataset* g_Dataset_f = &g_Dataset;
-
 
 Color g_Color = RED;
 int g_PointCout;
 
 // 获取当前模式
 RubberMode rm;
-OperationType g_OperationType = otNone; // 当前操作类型
+
 PixelPoint g_Points[100];
 
 // 定义一个图层指针
@@ -129,7 +129,7 @@ void handleMenuMessage(int menuID)
 	{
 		setCursor(csCross);
 		setRubberMode(rmPolygon);
-		g_OperationType = otDrawPolygonOutline;
+		g_OperationType = otDrawPolygon;
 		refreshWindow();
 		break;
 	}
