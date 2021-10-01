@@ -13,7 +13,9 @@ enum OperationType {
 	otDrawLine, otDrawPolyline, otDrawPolygon, otDrawPolygonOutline,
 	otDrawCircle, otDrawEllipse,
 	//像素画图
-	otPixel, ot10Network, ot20Network
+	otPixel, ot10Network, ot20Network,
+	// 填充
+	otAreaFill
 
 };
 OperationType g_OperationType = otNone; // 当前操作类型
@@ -21,6 +23,7 @@ boolean Reset = false;
 // 定义一个数据集，存放图层
 Dataset g_Dataset;
 Dataset* g_Dataset_f = &g_Dataset;
+PixelPoint p1[2];
 
 Color g_Color = RED;
 int g_PointCout;
@@ -75,7 +78,7 @@ void handleMenuMessage(int menuID)
 {
 	switch (menuID)
 	{
-	case ID_DRAWMODE_10:
+	case ID_DRAWMODE_GRID_10:
 	{
 		
 		g_OperationType = ot10Network;
@@ -93,7 +96,7 @@ void handleMenuMessage(int menuID)
 		break;
 	}
 
-	case ID_DRAWMODE_20:
+	case ID_DRAWMODE_GRID_20:
 	{
 		
 		g_OperationType = ot20Network;
@@ -101,7 +104,7 @@ void handleMenuMessage(int menuID)
 		refreshWindow();
 		break;
 	}
-	case ID_2D_RECTANGLE:
+	case ID_2D__RECTANGLE_OUTLINE:
 	{
 		setCursor(csSize);
 		setRubberMode(rmRectangle);
@@ -109,12 +112,12 @@ void handleMenuMessage(int menuID)
 		refreshWindow();
 		break;
 	}
-	case ID_2D_Line:
+	case ID_2D_LINE:
 	{
 		setCursor(csArrow);
 		setRubberMode(rmLine);
 		g_OperationType = otDrawLine;
-		refreshWindow();
+		//refreshWindow();
 		break;
 	}
 	case ID_2D_POLYLINE:
@@ -123,6 +126,13 @@ void handleMenuMessage(int menuID)
 		setRubberMode(rmPolyline);
 		g_OperationType = otDrawPolyline;
 		refreshWindow();
+		break;
+	}
+	case ID_2D_POLYGON_OUTLINE:
+	{
+		setCursor(csCross);
+		setRubberMode(rmPolygon);
+		g_OperationType = otDrawPolygonOutline;
 		break;
 	}
 	case ID_2D_POLYGON:
@@ -134,19 +144,27 @@ void handleMenuMessage(int menuID)
 		//refreshWindow();
 		break;
 	}
-	case ID_2D_drawCircle:
+	case ID_2D_CIRCLE_OUTLINE:
 	{
 		setCursor(csSize);
 		setRubberMode(rmLine);
 		g_OperationType = otDrawCircle;
 		break;
 	}
-	case ID_2D_Ellipse:
+	case ID_2D_ELLIPSE_OUTLINE:
 	{
 		setPenColor(BLUE);
 		setCursor(csCross);
 		setRubberMode(rmRectangle);
 		g_OperationType = otDrawEllipse;
+		break;
+	}
+	case ID_AREA_FILL:
+	{
+		g_OperationType = otAreaFill;
+		setRubberMode(rmLine);
+		setCursor(csArrow);
+		//setPenColor(YELLOW);
 		break;
 	}
 	case ID_RESET:
@@ -160,7 +178,6 @@ void handleMenuMessage(int menuID)
 			g_Dataset.addLayer(g_player);
 		}
 		refreshWindow();
-		Reset = false;
 		break;
 	}
 
@@ -213,10 +230,20 @@ void handleMouseMessage(UINT message, int x, int y, int det)
 		break;
 	case WM_LBUTTONUP:
 	{
+		int c = getRubberPointCount();
+		if (g_OperationType == otAreaFill && c==2)
+		{
+			
+			getRubberPoints(p1);
+			//PointFill(p1[0].x, p1[0].y, YELLOW);
+			refreshWindow();
+			break;
+		}
+		
 		rm = getRubberMode();
 		//if (rm == rmNone || rm == rmPolygon || rm == rmPolygon) break;
 		if (rm == rmNone) break;
-		int c = getRubberPointCount();
+		
 		if (c == 2)
 		{
 			PixelPoint pt1, pt2;
@@ -225,6 +252,11 @@ void handleMouseMessage(UINT message, int x, int y, int det)
 			switch (g_OperationType)
 			{
 			case otDrawLine:
+			{
+				if (pt1.x == pt2.x && pt1.y == pt2.y) return;
+				g_player->addGeometry(GeometryLibrary::createPolylineGeometry(pt1, pt2));
+				refreshWindow();
+			}
 			case otDrawCircle:
 			{
 				if (pt1.x == pt2.x && pt1.y == pt2.y) return;
@@ -371,6 +403,8 @@ void drawLayer(Layer* player)
 			{
 				Raster::drawLine(pts[i].x, pts[i].y, pts[(i + 1)].x, pts[(i + 1)].y, getPenColor());
 			}
+			if (g_OperationType == otDrawPolygonOutline)
+				Raster::drawLine(pts[pts.size() - 1].x, pts[pts.size() - 1].y, pts[0].x, pts[0].y, getPenColor());
 		}
 		break;
 		case gtPolygon:
@@ -407,6 +441,11 @@ void drawLayer(Layer* player)
 ///处理绘制消息
 void display()
 {
+	/*if (g_OperationType == otAreaFill)
+	{
+		PointFill(p1[0].x, p1[0].y, YELLOW);
+		
+	}*/
 
 	int w = getWindowWidth();//1423
 	int h = getWindowHeight();//730
@@ -417,11 +456,24 @@ void display()
 	if (!Reset)
 	{
 		drawDataset();
+		if (g_OperationType == otAreaFill)
+		{
+			//PointFill(p1[0].x, p1[0].y, YELLOW);
+			//BoundaryFill(p1[0].x, p1[0].y, BLACK, YELLOW);
+			ScanLineAreaFill(p1[0].x, p1[0].y, BLACK, RED);
+		}
 	}
 	else
 	{
+		Reset = false;
 		return;
 	}
+	//if (g_OperationType == otAreaFill)
+	//{
+	//	//PointFill(p1[0].x, p1[0].y, YELLOW);
+	//	BoundaryFill(p1[0].x, p1[0].y, BLACK, YELLOW);
+	//}
+	
 	
 	
 }

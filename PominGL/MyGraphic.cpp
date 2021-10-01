@@ -4,6 +4,7 @@
 #include <vector>
 #include "DrawState.h"
 #include <algorithm>
+#include <stack>
 //using namespace State;
 using namespace std;
 extern Color g_Color; // 线段颜色
@@ -24,8 +25,9 @@ int sign(int val)
 /// </summary>
 /// <param name="startp">开始绘制起点坐标</param>
 /// <param name="endp">绘制终点坐标</param>
-void MidPointLine(PixelPoint startp, PixelPoint endp)
+void MidPointLine(double x0, double y0, double x1, double y1, unsigned color)
 {
+	/*
 	int dex = abs(startp.x - endp.x);
 	int dey = abs(startp.y - endp.y);
 	bool tag = false;
@@ -50,14 +52,46 @@ void MidPointLine(PixelPoint startp, PixelPoint endp)
 		else
 		{
 			// d>0且斜率大于1时，y更新
-			if (tag == true) 
+			if (tag == true)
 				y += dy;
 			else // d>0且斜率不大于1时，x更新
 				x += dx;
 			d -= (dey + dey); // 增量更新-2dey
 		}
 	}
-	
+	*/
+	int dex = abs(x0 - x1);
+	int dey = abs(y0 - y1);
+	bool tag = false;
+	// 当直线斜率大于1时
+	if (dex < dey)
+	{
+		std::swap(dex, dey);
+		tag = true;
+	}
+	// x,y增量
+	int dx = sign(x1 - x0); int dy = sign(y1 - y0);
+	int d = dex - dey - dey; // 初始增量
+	int x = x0; int y = y0; // 起点
+	for (int i = 0; i <= dex; ++i)
+	{
+		setPixel(x, y, color);
+		if (d < 0) // d<0时，x,y分别加上加dx,dy
+		{
+			x += dx; y += dy;
+			d += (dex + dex - dey - dey); // 增量更新2dex-2dey
+		}
+		else
+		{
+			// d>0且斜率大于1时，y更新
+			if (tag == true)
+				y += dy;
+			else // d>0且斜率不大于1时，x更新
+				x += dx;
+			d -= (dey + dey); // 增量更新-2dey
+		}
+	}
+
 }
 /// <summary>
 /// DDA直线算法
@@ -66,8 +100,8 @@ void MidPointLine(PixelPoint startp, PixelPoint endp)
 /// <param name="endp">绘制终点坐标</param>
 void DDALine(PixelPoint startp, PixelPoint endp)
 {
-	int x = 0,dex,dey,dexx,deyy;
-	float dx,dy,xp,yp;
+	int x = 0, dex, dey, dexx, deyy;
+	float dx, dy, xp, yp;
 	dexx = endp.x - startp.x;
 	deyy = endp.y - startp.y;
 	dex = abs(dexx);
@@ -90,7 +124,7 @@ void DDALine(PixelPoint startp, PixelPoint endp)
 
 }
 
-// 绘制折线
+/* 绘制折线*/
 void DrawPolyline()
 {
 	// 起始索引
@@ -105,7 +139,7 @@ void DrawPolyline()
 		endp++;
 	}
 }
-// 画空心矩形
+/* 画空心矩形*/
 void DrawRectangle()
 {
 	int x0 = g_Points[0].x, y0 = g_Points[0].y;
@@ -123,9 +157,10 @@ void DrawRectangle()
 		setPixel(i, ymax, g_Color);
 	}
 }
-// 画空心多边形
+/* 画空心多边形*/
 void DrawPolygon()
 {
+	/*
 	// 先把数组中的点按顺序依次画出线段
 	int startp = 0; int endp = 1;
 
@@ -137,9 +172,10 @@ void DrawPolygon()
 	}
 	// 最后在起始点和终点之间画线，闭合多边形
 	MidPointLine(g_Points[0], g_Points[endp - 1]);
+	*/
 }
 
-// 画圆对应八个点位置
+/* 画圆对应八个点位置*/
 void CirclePlot(int xCenter, int yCenter, int x, int y, unsigned color)
 {
 	setPixel(xCenter + x, yCenter + y, color);
@@ -152,7 +188,7 @@ void CirclePlot(int xCenter, int yCenter, int x, int y, unsigned color)
 	setPixel(xCenter - y, yCenter - x, color);
 }
 
-// 画圆对应四个点位置
+/* 画椭圆对应四个点位置*/
 void EllipsePlot(int xCenter, int yCenter, int x, int y, unsigned color)
 {
 	setPixel(xCenter + x, yCenter + y, color);
@@ -161,7 +197,8 @@ void EllipsePlot(int xCenter, int yCenter, int x, int y, unsigned color)
 	setPixel(xCenter - x, yCenter - y, color);
 }
 
-void GetYMinMax(PixelPoint* data, int size,int& ymin, int& ymax)
+/*多边形填充光栅化*/
+void GetYMinMax(PixelPoint* data, int size, int& ymin, int& ymax)
 {
 	ymin = data[0].y;
 	ymax = data[0].y;
@@ -173,7 +210,7 @@ void GetYMinMax(PixelPoint* data, int size,int& ymin, int& ymax)
 			ymin = data[i].y;
 	}
 }
-void InitET(vector<vector<State::tagEDGE>>& etEDGE, PixelPoint* data, int size,int ymin,int ymax)
+void InitET(vector<vector<State::tagEDGE>>& etEDGE, PixelPoint* data, int size, int ymin, int ymax)
 {
 	State::tagEDGE edgeNode;
 	// 遍历所有点
@@ -186,6 +223,20 @@ void InitET(vector<vector<State::tagEDGE>>& etEDGE, PixelPoint* data, int size,i
 		// 水平线不处理
 		if (ps.y != pe.y)
 		{
+			edgeNode.dx = double(pe.x - ps.x) / double(pe.y - ps.y);
+			if (pe.y > ps.y) // 取最小值y的点x
+			{
+				edgeNode.x = ps.x;
+				edgeNode.ymax = pee.y > pe.y ? pe.y - 1 : pe.y;
+				etEDGE[ps.y - ymin].push_back(edgeNode);
+			}
+			else
+			{
+				edgeNode.x = pe.x;
+				edgeNode.ymax = pss.y > ps.y ? ps.y - 1 : ps.y;
+				etEDGE[pe.y - ymin].push_back(edgeNode);
+			}
+			/*
 			edgeNode.dx = double(pe.x - ps.x) / double(pe.y - ps.y);
 			if (pe.y > ps.y)
 			{
@@ -200,8 +251,8 @@ void InitET(vector<vector<State::tagEDGE>>& etEDGE, PixelPoint* data, int size,i
 					edgeNode.ymax = ps.y - 1;
 				else
 					edgeNode.ymax = ps.y;
-				etEDGE[pe.y-ymin].push_back(edgeNode);
-			}
+				etEDGE[pe.y - ymin].push_back(edgeNode);
+				*/
 		}
 
 	}
@@ -219,16 +270,16 @@ bool LessSort(State::tagEDGE a, State::tagEDGE b)
 	return a.dx < b.dx;
 	//return (a.x < b.x ? true : (a.dx < b.dx ? true : false));
 }
-void InsertAET(vector<State::tagEDGE>& e,vector<State::tagEDGE>& ae)
+void InsertAET(vector<State::tagEDGE>& e, vector<State::tagEDGE>& ae)
 {
 	if (e.size())
 	{
-		
+
 		ae.insert(ae.end(), e.begin(), e.end());
 		sort(ae.begin(), ae.end(), LessSort);
 	}
 	return;
-	
+
 }
 void ScanFillLine(vector<State::tagEDGE>& aetEDGE, int y, unsigned color)
 {
@@ -242,12 +293,12 @@ void ScanFillLine(vector<State::tagEDGE>& aetEDGE, int y, unsigned color)
 		{
 			setPixel(x, y, color);
 		}
-		
+
 		i += 2;
 	}
-	
+
 }
-void RemoveNonAET(vector<State::tagEDGE>& aetEDGE,int y)
+void RemoveAET(vector<State::tagEDGE>& aetEDGE, int y)
 {
 	auto iter = aetEDGE.begin();
 	while (iter != aetEDGE.end())
@@ -276,7 +327,7 @@ void ScanLineFill(vector<State::tagEDGE>& aetEDGE, vector<vector<State::tagEDGE>
 	{
 		InsertAET(etEDGE[y - ymin], aetEDGE); // 若当前边表中有活性边，则插入活性表中
 		ScanFillLine(aetEDGE, y, color); // 对当前行进行填充
-		RemoveNonAET(aetEDGE,y);  // 当前活性边表中是否有边已经扫描完，需要移除
+		RemoveAET(aetEDGE, y);  // 当前活性边表中是否有边已经扫描完，需要移除
 		UpdateAET(aetEDGE); // 更新x坐标
 		continue; // 继续下一行扫描
 	}
@@ -289,8 +340,129 @@ void HorizonEdgeFill(PixelPoint* data, int size, unsigned color)
 		{
 			for (int x = data[i].x; x < data[(i + 1) % size].x; x++)
 			{
-				setPixel(x, data[i].y,color);
+				setPixel(x, data[i].y, color);
 			}
 		}
 	}
 }
+
+/*区域填充算法*/
+
+void PointFill(int x, int y, unsigned newColor)
+{
+	unsigned oldColor = getPixel(x, y);
+	PixelPoint startPt = { x, y };
+	PixelPoint AdjPt[4];
+	vector<PixelPoint> AdjPtList;
+	AdjPtList.push_back(startPt);
+	while (!AdjPtList.empty())
+	{
+		PixelPoint topPt = AdjPtList.back();
+		setPixel(topPt.x, topPt.y, newColor);
+		AdjPt[0] = { topPt.x - 1,topPt.y };
+		AdjPt[1] = { topPt.x,topPt.y + 1 };
+		AdjPt[2] = { topPt.x + 1,topPt.y };
+		AdjPt[3] = { topPt.x, topPt.y - 1 };
+		AdjPtList.pop_back();
+		for (int i = 0; i < 4; i++)
+		{
+			if (getPixel(AdjPt[i].x, AdjPt[i].y) == oldColor)
+			{
+				AdjPtList.push_back(AdjPt[i]);
+			}
+		}
+
+	}
+}
+void BoundaryFill(int x, int y, unsigned bdrColor, unsigned newColor)
+{
+	PixelPoint startPt = { x, y };
+	PixelPoint AdjPt[4];
+	vector<PixelPoint> AdjPtList;
+	AdjPtList.push_back(startPt);
+	while (!AdjPtList.empty())
+	{
+		PixelPoint topPt = AdjPtList.back();
+		setPixel(topPt.x, topPt.y, newColor);
+		AdjPt[0] = { topPt.x - 1,topPt.y };
+		AdjPt[1] = { topPt.x,topPt.y + 1 };
+		AdjPt[2] = { topPt.x + 1,topPt.y };
+		AdjPt[3] = { topPt.x, topPt.y - 1 };
+		AdjPtList.pop_back();
+		for (int i = 0; i < 4; i++)
+		{
+			unsigned oldColor = getPixel(AdjPt[i].x, AdjPt[i].y);
+			if (oldColor != bdrColor && oldColor != newColor)
+			{
+				AdjPtList.push_back(AdjPt[i]);
+			}
+		}
+
+	}
+}
+
+void SearchLinePint(stack<PixelPoint>& slStack, int xleft, int xright, int y, unsigned bdrColor, unsigned newColor)
+{
+	bool span_need_fill = false;
+	unsigned PixelColor;
+	PixelPoint Pt;
+	while (xleft <= xright)
+	{
+		span_need_fill = false;
+		//PixelColor = getPixel(xleft, y);
+		while ((getPixel(xleft, y) != bdrColor) && (getPixel(xleft, y) != newColor) && (xleft < xright))
+		{
+			span_need_fill = true;
+			xleft++;
+		}
+		if (span_need_fill)
+		{
+
+			if ((getPixel(xleft, y) != bdrColor) && (getPixel(xleft, y) != newColor) && (xleft == xright))
+			{
+				Pt = { xleft,y };
+				slStack.push(Pt);
+			}
+			else
+			{
+				Pt = { xleft - 1,y };
+				slStack.push(Pt);
+			}
+
+		}
+		//auto pCount = [=](int x, int y, int xright, unsigned bdrColor, unsigned newColor) {while ((x < xright) && (getPixel(x, y) == bdrColor || getPixel(x, y) == newColor)) { x++; }; return x;
+	//};
+		xleft++;
+		//TODO 略过无效点
+
+
+	}
+}
+
+void ScanLineAreaFill(int x, int y, unsigned bdrColor, unsigned newColor)
+{
+	const bool toleft = true;
+	const bool toright = false;
+	int x0, y0, xright, xleft;
+	PixelPoint startPt = { x,y };
+	PixelPoint Pt;
+	stack<PixelPoint> slStack;//堆栈 pixel_stack初始化
+	slStack.push(startPt);    //(x,y)是给定的种子像素
+	while (!slStack.empty())
+	{
+		Pt = slStack.top();
+		slStack.pop();
+		x0 = Pt.x;
+		y0 = Pt.y;
+		auto lrFill = [=](int x, int y, bool direct) {if (direct) { while (getPixel(x, y) != bdrColor) { setPixel(x, y, newColor); x -= 1; } return x + 1; }
+		else {
+			while (getPixel(x, y) != bdrColor) { setPixel(x, y, newColor); x += 1; }
+			return x - 1;
+		}};
+		xleft = lrFill(x0, y0, toleft);
+		xright = lrFill(x0, y0, toright);
+		SearchLinePint(slStack, xleft, xright, y0 - 1, bdrColor, newColor);
+		SearchLinePint(slStack, xleft, xright, y0 + 1, bdrColor, newColor);
+	}//出栈完
+}
+

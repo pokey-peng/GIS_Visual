@@ -11,7 +11,7 @@ using namespace std;
 
 
 /*线的光栅化--中点Bresenham算法*/
-void MidPointLine(PixelPoint p1, PixelPoint p2);
+void MidPointLine(double x0, double y0, double x1, double y1, unsigned color);
 
 /*画折线*/
 void DrawPolyline();
@@ -39,5 +39,10 @@ void InitAET();
 /*多边形扫描填充*/
 void ScanLineFill(vector<State::tagEDGE>& aetEDGE, vector<vector<State::tagEDGE>>& etEDGE, int ymin, int ymax,unsigned color);
 
+/*区域填充算法*/
+
+void PointFill(int x, int y, unsigned newColor); // 内部点定义区域
+void BoundaryFill(int x, int y, unsigned bdrColor, unsigned newColor); // 边界定义的区域
+void ScanLineAreaFill(int x, int y, unsigned bdrColor, unsigned newColor);
 #endif // !_MYGRAPHIC_H
 

@@ -21,9 +21,10 @@ void Raster::drawGrid()
 	//TODO drawGrid(未实现)
 }
 
-void Raster::drawLine(int x0, int y0, int x1, int y1, unsigned color)
+void Raster::drawLine(double x0, double y0, double x1, double y1, unsigned color)
 {
 	//TODO drawLine(未实现)
+	MidPointLine(x0, y0, x1, y1, color);
 
 
 }
