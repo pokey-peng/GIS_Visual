@@ -172,7 +172,7 @@ void setPenColor( Color color );
 double getPixelSize();
 
 ///橡皮线模式, rmNone -- 关闭橡皮线模式 ，rmLine-- 线模式， rmRectangle -- 矩形模式 , rmPolyline-- 折线模式, rmPolygon -- 多边形模式
-enum RubberMode{ rmNone, rmLine, rmRectangle, rmPolyline, rmPolygon };
+enum RubberMode{ rmNone, rmLine, rmRectangle, rmPolyline, rmPolygon, rmCircle, rmEllipse };
 
 /**	设置当前模式是否为橡皮线模式
 @param  value 是否橡皮线模式

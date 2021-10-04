@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <windowsx.h>
 #include "MyGraphic.h"
 #include "Graphic.h"
 #include <vector>
@@ -10,6 +11,210 @@ using namespace std;
 extern Color g_Color; // 线段颜色
 extern PixelPoint g_Points[100]; // 存放需要绘制的点的数组
 extern int g_PointCout;  //点的个数
+
+HDC g_HDC = 0;
+
+class RubberPad
+{
+public:
+	POINT pt1;
+	vector<POINT> pts;
+	Color penColor;
+	Color oldPenColor;
+	int oldROP2Mode;
+	RubberMode rubberMode;
+	bool startDrawing;
+	bool lineToFirst;
+
+	RubberPad()
+	{
+		penColor = YELLOW;
+		rubberMode = rmNone;
+		startDrawing = false;
+		lineToFirst = true;
+	}
+
+	void mouseDown(UINT wMsg, WPARAM wParam, LPARAM lParam)
+	{
+		//if (wMsg == WM_LBUTTONDOWN)
+		//{
+		//	if (rubberMode == rmNone) return;
+
+		//	oldROP2Mode = SetROP2(g_hDC, R2_NOT);
+		//	SelectObject(g_hDC, GetStockObject(DC_PEN));
+		//	oldPenColor = SetDCPenColor(g_hDC, penColor);
+
+		//	pt1.x = LOWORD(lParam);
+		//	pt1.y = HIWORD(lParam);
+
+		//	pt2 = pt1;
+		//	startDrawing = true;
+		//}
+	}
+
+	void mouseMove(UINT wMsg, WPARAM wParam, LPARAM lParam)
+	{
+		/*if (rubberMode == rmNone) return;
+
+		if (startDrawing)
+		{
+			drawRubberline(g_HDC, pt1.x, pt1.y, pt2.x, pt2.y);
+
+			if (rubberMode == rmPolygon && pts.size() >= 2)
+			{
+				if (lineToFirst)
+					drawRubberline(g_HDC, pts[0].x, pts[0].y, pt2.x, pt2.y);
+				else
+					lineToFirst = true;
+			}
+
+			pt2.x = LOWORD(lParam);
+			pt2.y = HIWORD(lParam);
+
+			drawRubberline(g_HDC, pt1.x, pt1.y, pt2.x, pt2.y);
+
+			if (rubberMode == rmPolygon && pts.size() >= 2)
+			{
+				drawRubberline(g_HDC, pts[0].x, pts[0].y, pt2.x, pt2.y);
+			}
+		}*/
+
+	}
+
+	void mouseUp(UINT wMsg, WPARAM wParam, LPARAM lParam)
+	{
+		//if (wMsg == WM_LBUTTONUP)
+		//{
+		//	if (rubberMode == rmNone) return;
+
+		//	if (!startDrawing)
+		//	{
+		//		oldROP2Mode = SetROP2(g_HDC, R2_NOT);
+		//		SelectObject(g_HDC, GetStockObject(DC_PEN));
+		//		oldPenColor = SetDCPenColor(g_HDC, penColor);
+
+		//		pt1.x = LOWORD(lParam);
+		//		pt1.y = HIWORD(lParam);
+
+		//		pt2 = pt1;
+		//		pts.clear();
+
+		//		startDrawing = true;
+		//	}
+		//	else
+		//	{
+		//		if (rubberMode == rmLine || rubberMode == rmRectangle)
+		//		{
+		//			drawRubberline(g_HDC, pt1.x, pt1.y, pt2.x, pt2.y);
+
+		//			pts.push_back(pt2);
+
+		//			DPtToLPt(pts[0].x, pts[0].y, (int&)pts[0].x, (int&)pts[0].y);
+		//			DPtToLPt(pts[1].x, pts[1].y, (int&)pts[1].x, (int&)pts[1].y);
+		//			//DPtToLPt( pt1.x, pt1.y, (int&)pt1.x, (int&)pt1.y );
+		//			//DPtToLPt( pt2.x, pt2.y, (int&)pt2.x, (int&)pt2.y );
+
+		//			SelectObject(g_HDC, GetStockObject(DC_PEN));
+		//			oldPenColor = SetDCPenColor(g_HDC, penColor);
+		//			SetROP2(g_HDC, oldROP2Mode);
+		//			startDrawing = false;
+
+		//			return;
+		//		}
+		//		else
+		//		{
+		//			if (rubberMode == rmPolygon && pts.size() == 1)
+		//			{
+		//				drawRubberline(g_HDC, pt1.x, pt1.y, pt2.x, pt2.y);//擦除
+		//				lineToFirst = false;//多边形模式下防止第一条线被擦除
+		//			}
+
+		//			pt2.x = LOWORD(lParam);
+		//			pt2.y = HIWORD(lParam);
+
+		//			if (rubberMode == rmPolygon && pts.size() == 1)
+		//			{
+		//				drawRubberline(g_HDC, pt1.x, pt1.y, pt2.x, pt2.y);
+		//			}
+
+		//			pt1 = pt2;
+		//		}
+		//	}
+
+		//	pts.push_back(pt1);
+
+		//}
+		//else if (wMsg == WM_RBUTTONUP)
+		//{
+		//	if (startDrawing == false) return;
+
+		//	if (rubberMode == rmPolyline || rubberMode == rmPolygon)
+		//	{
+		//		drawRubberline(g_HDC, pt1.x, pt1.y, pt2.x, pt2.y);	//擦除P1P2
+
+		//		if (rubberMode == rmPolygon && pts.size() >= 2) // >= 2 --> P2 与两个点相连
+		//		{
+		//			if (lineToFirst)
+		//				drawRubberline(g_HDC, pts[0].x, pts[0].y, pt2.x, pt2.y);
+		//			else
+		//				lineToFirst = true;	 //擦除P0P2
+		//		}
+
+		//		for (int i = 0; i < (int)pts.size() - 1; ++i)
+		//		{
+		//			drawRubberline(g_HDC, pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y);
+		//		}
+
+		//		for (int i = 0; i < (int)pts.size(); ++i)
+		//		{
+		//			DPtToLPt(pts[i].x, pts[i].y, (int&)pts[i].x, (int&)pts[i].y);
+		//		}
+
+		//		SelectObject(g_HDC, GetStockObject(DC_PEN));
+		//		oldPenColor = SetDCPenColor(g_HDC, penColor);
+		//		SetROP2(g_HDC, oldROP2Mode);
+		//		startDrawing = false;
+		//	}
+		//}
+	}
+
+	/*void drawRubberline(HDC hdc, int x0, int y0, int x1, int y1)
+	{
+
+		if (rubberMode != rmRectangle)
+		{
+			drawLine(hdc, x0, y0, x1, y1);
+		}
+		else
+		{
+			drawRectangle(hdc, x0, y0, x1, y1);
+		}
+	}
+
+	void drawLine(HDC hdc, int x0, int y0, int x1, int y1)
+	{
+#ifdef DIRECT_DRAW
+		DPtToLPt(x0, y0, x0, y0);
+		DPtToLPt(x1, y1, x1, y1);
+#endif
+		MoveToEx(hdc, x0, y0, NULL);
+		LineTo(hdc, x1, y1);
+	}
+
+	void drawRectangle(HDC hdc, int x0, int y0, int x1, int y1)
+	{
+#ifdef DIRECT_DRAW
+		DPtToLPt(x0, y0, x0, y0);
+		DPtToLPt(x1, y1, x1, y1);
+#endif
+		MoveToEx(hdc, x0, y0, NULL);
+		LineTo(hdc, x1, y0);
+		LineTo(hdc, x1, y1);
+		LineTo(hdc, x0, y1);
+		LineTo(hdc, x0, y0);
+	}*/
+};
+
 
 int sign(int val)
 {

@@ -146,8 +146,8 @@ void handleMenuMessage(int menuID)
 	}
 	case ID_2D_CIRCLE_OUTLINE:
 	{
-		setCursor(csSize);
-		setRubberMode(rmLine);
+		setCursor(csHand);
+		setRubberMode(rmCircle);
 		g_OperationType = otDrawCircle;
 		break;
 	}
@@ -155,7 +155,7 @@ void handleMenuMessage(int menuID)
 	{
 		setPenColor(BLUE);
 		setCursor(csCross);
-		setRubberMode(rmRectangle);
+		setRubberMode(rmEllipse);
 		g_OperationType = otDrawEllipse;
 		break;
 	}

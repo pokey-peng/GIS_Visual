@@ -897,6 +897,8 @@ public:
 
 		if (startDrawing)
 		{
+			HBRUSH brush = (HBRUSH)GetStockObject(NULL_BRUSH);
+			SelectObject(g_hDC, brush);
 			drawRubberline(g_hDC, pt1.x, pt1.y, pt2.x, pt2.y);
 
 			if( rubberMode == rmPolygon && pts.size() >= 2 )
@@ -942,7 +944,7 @@ public:
 			}
 			else
 			{
-				if( rubberMode == rmLine || rubberMode == rmRectangle )
+				if( rubberMode != rmPolygon && rubberMode != rmPolyline )
 				{
 					drawRubberline(g_hDC, pt1.x, pt1.y, pt2.x, pt2.y);	
 
@@ -1019,15 +1021,37 @@ public:
 
 	void drawRubberline(HDC hdc, int x0, int y0, int x1, int y1)
 	{
+		switch (rubberMode)
+		{
+		case rmCircle:
+		{
+			double dx = x1 - x0;
+			double dy = y1 - y0;
+			int r = round(sqrt(dx * dx + dy * dy));
+			drawCircle(hdc,x0-r,y0+r,x0+r,y0-r);
+			break;
+		}
+		case rmRectangle:
+			drawRectangle(hdc, x0, y0, x1, y1);
+			break;
+		case rmEllipse:
+		{
+			drawRectangle(hdc, x0, y0, x1, y1);
+			drawCircle(hdc, x0, y0, x1, y1);
+			break;
+		}
+		default:
+			drawLine(hdc, x0, y0, x1, y1);
+		}
 
-		if (rubberMode != rmRectangle )
+		/*if (rubberMode != rmRectangle )
 		{
 			drawLine(hdc, x0, y0, x1, y1);
 		}
 		else
 		{
 			drawRectangle(hdc, x0, y0, x1, y1);
-		}
+		}*/
 	}
 
 	void drawLine(HDC hdc, int x0, int y0, int x1, int y1)
@@ -1051,6 +1075,16 @@ public:
 		LineTo(hdc, x1, y1);
 		LineTo(hdc, x0, y1);
 		LineTo(hdc, x0, y0);
+	}
+
+	void drawCircle(HDC hdc, int x0, int y0, int x1, int y1)
+	{
+#ifdef DIRECT_DRAW
+		DPtToLPt(x0, y0, x0, y0);
+		DPtToLPt(x1, y1, x1, y1);
+#endif
+		//AngleArc(hdc, x0, y0, r, 0, 360);
+		Ellipse(hdc,x0,y0,x1,y1);
 	}
 };
 
