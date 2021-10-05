@@ -18,6 +18,7 @@ enum OperationType {
 	otAreaFill
 
 };
+
 OperationType g_OperationType = otNone; // 当前操作类型
 boolean Reset = false;
 // 定义一个数据集，存放图层
