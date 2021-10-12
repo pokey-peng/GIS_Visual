@@ -41,8 +41,31 @@ void ScanLineFill(vector<State::tagEDGE>& aetEDGE, vector<vector<State::tagEDGE>
 
 /*区域填充算法*/
 
-void PointFill(int x, int y, unsigned newColor); // 内部点定义区域
-void BoundaryFill(int x, int y, unsigned bdrColor, unsigned newColor); // 边界定义的区域
+
+/// <summary>
+/// 内部点集定义区域填充算法
+/// </summary>
+/// <param name="x">种子点x坐标</param>
+/// <param name="y">种子点y坐标</param>
+/// <param name="newColor">用于填充区域的新颜色</param>
+void PointFill(int x, int y, unsigned newColor);
+
+/// <summary>
+/// 边界定义区域填充算法
+/// </summary>
+/// <param name="x">种子点x坐标</param>
+/// <param name="y">种子点y坐标</param>
+/// <param name="bdrColor">边界点颜色</param>
+/// <param name="newColor">用于填充的新颜色</param>
+void BoundaryFill(int x, int y, unsigned bdrColor, unsigned newColor);
+
+/// <summary>
+/// 扫描线种子填充算法
+/// </summary>
+/// <param name="x">种子点x坐标</param>
+/// <param name="y">种子点y坐标</param>
+/// <param name="bdrColor">边界颜色</param>
+/// <param name="newColor">填充颜色</param>
 void ScanLineAreaFill(int x, int y, unsigned bdrColor, unsigned newColor);
 #endif // !_MYGRAPHIC_H
 
