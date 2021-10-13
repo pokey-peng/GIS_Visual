@@ -68,6 +68,9 @@
     <ClCompile Include="MyRaster.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="DrawState.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="PominGL.rc">

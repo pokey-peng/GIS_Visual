@@ -232,39 +232,8 @@ int sign(int val)
 /// <param name="endp">绘制终点坐标</param>
 void MidPointLine(double x0, double y0, double x1, double y1, unsigned color)
 {
-	/*
-	int dex = abs(startp.x - endp.x);
-	int dey = abs(startp.y - endp.y);
-	bool tag = false;
-	// 当直线斜率大于1时
-	if (dex < dey)
-	{
-		std::swap(dex, dey);
-		tag = true;
-	}
-	// x,y增量
-	int dx = sign(endp.x - startp.x); int dy = sign(endp.y - startp.y);
-	int d = dex - dey - dey; // 初始增量
-	int x = startp.x; int y = startp.y; // 起点
-	for (int i = 0; i <= dex; ++i)
-	{
-		setPixel(x, y, g_Color);
-		if (d < 0) // d<0时，x,y分别加上加dx,dy
-		{
-			x += dx; y += dy;
-			d += (dex + dex - dey - dey); // 增量更新2dex-2dey
-		}
-		else
-		{
-			// d>0且斜率大于1时，y更新
-			if (tag == true)
-				y += dy;
-			else // d>0且斜率不大于1时，x更新
-				x += dx;
-			d -= (dey + dey); // 增量更新-2dey
-		}
-	}
-	*/
+	
+
 	int dex = abs(x0 - x1);
 	int dey = abs(y0 - y1);
 	bool tag = false;
@@ -280,7 +249,7 @@ void MidPointLine(double x0, double y0, double x1, double y1, unsigned color)
 	int x = x0; int y = y0; // 起点
 	for (int i = 0; i <= dex; ++i)
 	{
-		setPixel(x, y, color);
+		g_State.drawPixelCB(x, y, color);
 		if (d < 0) // d<0时，x,y分别加上加dx,dy
 		{
 			x += dx; y += dy;
