@@ -8,30 +8,29 @@
 #include "MyRaster.h"
 #include "DrawState.h"
 using namespace std;
-enum OperationType {
-	otNone, otDrawRectangle, otDrawRectangleOutline,
-	otDrawLine, otDrawPolyline, otDrawPolygon, otDrawPolygonOutline,
-	otDrawCircle, otDrawEllipse,
-	//像素画图
-	otPixel, ot10Network, ot20Network,
-	// 填充
-	otAreaFill
-
-};
-
-OperationType g_OperationType = otNone; // 当前操作类型
+//enum OperationType {
+//	otNone, otDrawRectangle, otDrawRectangleOutline,
+//	otDrawLine, otDrawPolyline, otDrawPolygon, otDrawPolygonOutline,
+//	otDrawCircle, otDrawEllipse,
+//	//像素画图
+//	otPixel, ot10Network, ot20Network,
+//	// 填充
+//	otAreaFill
+//
+//};
+//
+//OperationType g_OperationType = otNone; // 当前操作类型
 boolean Reset = false;
 // 定义一个数据集，存放图层
 Dataset g_Dataset;
-Dataset* g_Dataset_f = &g_Dataset;
-PixelPoint p1[2];
 
 Color g_Color = RED;
 int g_PointCout;
 
+PixelPoint p1[2];
+
 // 获取当前模式
 RubberMode rm;
-
 PixelPoint g_Points[100];
 
 // 定义一个图层指针
@@ -81,9 +80,8 @@ void handleMenuMessage(int menuID)
 	{
 	case ID_DRAWMODE_GRID_10:
 	{
-		
-		g_OperationType = ot10Network;
-		setRubberMode(rmNone);
+		g_State.DrawMode = dmGrid;
+		g_State.drawPixelCB = Raster::drawCell;
 		refreshWindow();
 		break;
 	}
@@ -91,17 +89,26 @@ void handleMenuMessage(int menuID)
 	case ID_DRAWMODE_PIXEL:
 	{
 		g_Color = RED;
-		g_OperationType = otPixel;
+		g_State.g_OperationType = otPixel;
 		setRubberMode(rmNone);
+		
 		refreshWindow();
 		break;
 	}
 
 	case ID_DRAWMODE_GRID_20:
 	{
-		
-		g_OperationType = ot20Network;
-		setRubberMode(rmNone);
+		g_State.DrawMode = dmGrid;
+		g_State.GridHeight = 20;
+		g_State.GridWidth = 20;
+		g_State.drawPixelCB = Raster::drawCell;
+		refreshWindow();
+		break;
+	}
+	case ID_DRAWMODEL_GEOMETRY:
+	{
+		g_State.DrawMode = dmGemotry;
+		g_State.drawPixelCB = setPixel;
 		refreshWindow();
 		break;
 	}
@@ -109,7 +116,7 @@ void handleMenuMessage(int menuID)
 	{
 		setCursor(csSize);
 		setRubberMode(rmRectangle);
-		g_OperationType = otDrawRectangleOutline;
+		g_State.g_OperationType = otDrawRectangleOutline;
 		refreshWindow();
 		break;
 	}
@@ -117,7 +124,7 @@ void handleMenuMessage(int menuID)
 	{
 		setCursor(csArrow);
 		setRubberMode(rmLine);
-		g_OperationType = otDrawLine;
+		g_State.g_OperationType = otDrawLine;
 		//refreshWindow();
 		break;
 	}
@@ -125,7 +132,7 @@ void handleMenuMessage(int menuID)
 	{
 		setCursor(csHand);
 		setRubberMode(rmPolyline);
-		g_OperationType = otDrawPolyline;
+		g_State.g_OperationType = otDrawPolyline;
 		refreshWindow();
 		break;
 	}
@@ -133,7 +140,7 @@ void handleMenuMessage(int menuID)
 	{
 		setCursor(csCross);
 		setRubberMode(rmPolygon);
-		g_OperationType = otDrawPolygonOutline;
+		g_State.g_OperationType = otDrawPolygonOutline;
 		break;
 	}
 	case ID_2D_POLYGON:
@@ -141,7 +148,7 @@ void handleMenuMessage(int menuID)
 		setPenColor(BLUE);
 		setCursor(csCross);
 		setRubberMode(rmPolygon);
-		g_OperationType = otDrawPolygon;
+		g_State.g_OperationType = otDrawPolygon;
 		//refreshWindow();
 		break;
 	}
@@ -149,20 +156,20 @@ void handleMenuMessage(int menuID)
 	{
 		setCursor(csHand);
 		setRubberMode(rmCircle);
-		g_OperationType = otDrawCircle;
+		g_State.g_OperationType = otDrawCircle;
 		break;
 	}
 	case ID_2D_ELLIPSE_OUTLINE:
 	{
-		setPenColor(BLUE);
+		//setPenColor(BLUE);
 		setCursor(csCross);
 		setRubberMode(rmEllipse);
-		g_OperationType = otDrawEllipse;
+		g_State.g_OperationType = otDrawEllipse;
 		break;
 	}
 	case ID_AREA_FILL:
 	{
-		g_OperationType = otAreaFill;
+		g_State.g_OperationType = otAreaFill;
 		setRubberMode(rmLine);
 		setCursor(csArrow);
 		//setPenColor(YELLOW);
@@ -181,6 +188,18 @@ void handleMenuMessage(int menuID)
 		refreshWindow();
 		break;
 	}
+
+	case ID_COLOR_RED:
+	{
+		setPenColor(RED);
+		break;
+	}
+	case ID_COLOR_GREEN:
+		setPenColor(GREEN);
+		break;
+	case ID_COLOR_BLUE:
+		setPenColor(BLUE);
+		break;
 
 	case IDM_EXIT:
 		PostQuitMessage(0);
@@ -223,16 +242,13 @@ void handleMouseMessage(UINT message, int x, int y, int det)
 	switch (message)
 	{
 	case WM_LBUTTONDOWN:
-	{
-		//MessageBox(hWnd, TEXT("哎呀，我是彭棋！"), TEXT("你好啊！"), MB_OK);
 		break;
-	}
 	case WM_MOUSEMOVE:
 		break;
 	case WM_LBUTTONUP:
 	{
 		int c = getRubberPointCount();
-		if (g_OperationType == otAreaFill && c==2)
+		if (g_State.g_OperationType == otAreaFill && c==2)
 		{
 			
 			getRubberPoints(p1);
@@ -250,22 +266,23 @@ void handleMouseMessage(UINT message, int x, int y, int det)
 			PixelPoint pt1, pt2;
 			getRubberPoints(pt1, pt2);
 
-			switch (g_OperationType)
+			switch (g_State.g_OperationType)
 			{
 			case otDrawLine:
 			{
 				if (pt1.x == pt2.x && pt1.y == pt2.y) return;
-				g_player->addGeometry(GeometryLibrary::createPolylineGeometry(pt1, pt2));
+				g_player->addGeometry(GeometryLibrary::createPolylineGeometry(pt1, pt2,getPenColor()));
 				refreshWindow();
+				break;
 			}
 			case otDrawCircle:
 			{
 				if (pt1.x == pt2.x && pt1.y == pt2.y) return;
 
-				if (g_OperationType == otDrawLine)
-					g_player->addGeometry(GeometryLibrary::createPolylineGeometry(pt1, pt2));
-				else
-					g_player->addGeometry(GeometryLibrary::createCircleGeometry(pt1.x, pt1.y, pt2.x, pt2.y));
+				/*if (g_g_OperationType == otDrawLine)
+					g_player->addGeometry(GeometryLibrary::createPolylineGeometry(pt1, pt2,getPenColor()));
+				else*/
+				g_player->addGeometry(GeometryLibrary::createCircleGeometry(pt1.x, pt1.y, pt2.x, pt2.y,getPenColor()));
 				refreshWindow();
 			}
 			break;
@@ -279,12 +296,12 @@ void handleMouseMessage(UINT message, int x, int y, int det)
 				double y2 = pt2.y;
 				if (x1 == x2 || y1 == y2) return;
 
-				if (g_OperationType == otDrawRectangle)
+				if (g_State.g_OperationType == otDrawRectangle)
 					g_player->addGeometry(GeometryLibrary::creatRectangleGeometry(x1, y1, x2, y2));
-				else if (g_OperationType == otDrawRectangleOutline)
+				else if (g_State.g_OperationType == otDrawRectangleOutline)
 					g_player->addGeometry(GeometryLibrary::creatRectangleOutlineGeometry(x1, y1, x2, y2));
 				else
-					g_player->addGeometry(GeometryLibrary::createEllipseGeometry(x1, y1, x2, y2));
+					g_player->addGeometry(GeometryLibrary::createEllipseGeometry(x1, y1, x2, y2,getPenColor()));
 				refreshWindow();
 			}
 			break;
@@ -298,7 +315,7 @@ void handleMouseMessage(UINT message, int x, int y, int det)
 		if (rm != rmPolyline && rm != rmPolygon) break;
 
 		int c = getRubberPointCount();
-		switch (g_OperationType)
+		switch (g_State.g_OperationType)
 		{
 		case otDrawPolyline:
 		{
@@ -307,7 +324,7 @@ void handleMouseMessage(UINT message, int x, int y, int det)
 			vector<PixelPoint> pts(c);
 			getRubberPoints(pts.data());
 
-			g_player->addGeometry(GeometryLibrary::createPolylineGeometry(pts.data(), pts.size()));
+			g_player->addGeometry(GeometryLibrary::createPolylineGeometry(pts.data(), pts.size(),getPenColor()));
 
 			refreshWindow();
 		}
@@ -327,11 +344,7 @@ void handleMouseMessage(UINT message, int x, int y, int det)
 
 			vector<PixelPoint> pts(c);
 			getRubberPoints(pts.data());
-
-			if (g_OperationType == otDrawPolygon)
-				g_player->addGeometry(GeometryLibrary::createPolygonGeometry(pts.data(), pts.size()));
-			else
-				g_player->addGeometry(GeometryLibrary::createPolygonOutlineGeometry(pts.data(), pts.size()));
+			g_player->addGeometry(GeometryLibrary::createPolygonOutlineGeometry(pts.data(), pts.size(),getPenColor()));
 
 			refreshWindow();
 		}
@@ -385,9 +398,14 @@ void drawDataset()
 }
 void drawLayer(Layer* player)
 {
+	if (g_State.DrawMode == dmGrid)
+	{
+		Raster::drawGrid();
+	}
 	for (int i = 0, size = player->getGeometryCount(); i < size; ++i)
 	{
 		Geometry2D* pGeometryBase = (*player)[i];
+		
 		switch (pGeometryBase->getGeomType())
 		{
 		case gtPoint:
@@ -398,14 +416,30 @@ void drawLayer(Layer* player)
 		break;
 		case gtPolyline:
 		{
+			
 			PolylineGeometry* pGeometry = (PolylineGeometry*)pGeometryBase;
 			const vector<Point2D>& pts = pGeometry->getPts();
-			for (int i = 0, c = pts.size(); i < c - 1; ++i)
+			if (g_State.DrawMode == dmGrid)
 			{
-				Raster::drawLine(pts[i].x, pts[i].y, pts[(i + 1)].x, pts[(i + 1)].y, getPenColor());
+				vector<PixelPoint> pt(pts.size());
+				for (int i = 0, s = pts.size(); i < s; ++i)
+				{
+					pt[i].x = pts[i].x;
+					pt[i].y = pts[i].y;
+				}
+				Raster::ChangeOf_XYs(pt.data(), pt.size());
+				for (int i = 0, c = pt.size(); i < c - 1; ++i)
+				{
+					Raster::drawLine(pt[i].x, pt[i].y, pt[(i + 1)].x, pt[(i + 1)].y, pGeometry->color);
+				}
 			}
-			if (g_OperationType == otDrawPolygonOutline)
-				Raster::drawLine(pts[pts.size() - 1].x, pts[pts.size() - 1].y, pts[0].x, pts[0].y, getPenColor());
+			else
+			{
+				for (int i = 0, c = pts.size(); i < c - 1; ++i)
+				{
+					Raster::drawLine(pts[i].x, pts[i].y, pts[(i + 1)].x, pts[(i + 1)].y, pGeometry->color);
+				}
+			}
 		}
 		break;
 		case gtPolygon:
@@ -418,13 +452,13 @@ void drawLayer(Layer* player)
 				pts2[i].x = pts[i].x;
 				pts2[i].y = pts[i].y;
 			}
-			Raster::drawPolygon(pts2.data(), pts2.size(), getPenColor());
+			Raster::drawPolygon(pts2.data(), pts2.size(), pGeometry->color);
 		}
 		break;
 		case gtCircle:
 		{
 			CircleGeometry* pGeometry = (CircleGeometry*)pGeometryBase;
-			Raster::drawCircle(pGeometry->x, pGeometry->y, pGeometry->r, getPenColor());
+			Raster::drawCircle(pGeometry->x, pGeometry->y, pGeometry->r, pGeometry->color);
 		}
 		break;
 
@@ -433,7 +467,7 @@ void drawLayer(Layer* player)
 			EllipseGeometry* pGeometry = (EllipseGeometry*)pGeometryBase;
 			double x, y;
 			pGeometry->getCenter(x, y);
-			Raster::drawEllipse(x, y, pGeometry->getWidth(), pGeometry->getHeight(), getPenColor());
+			Raster::drawEllipse(x, y, pGeometry->getWidth(), pGeometry->getHeight(),pGeometry->color);
 		}
 		break;
 		}
@@ -442,12 +476,7 @@ void drawLayer(Layer* player)
 ///处理绘制消息
 void display()
 {
-	/*if (g_OperationType == otAreaFill)
-	{
-		PointFill(p1[0].x, p1[0].y, YELLOW);
-		
-	}*/
-
+	
 	int w = getWindowWidth();//1423
 	int h = getWindowHeight();//730
 
@@ -456,8 +485,9 @@ void display()
 	rm = getRubberMode();
 	if (!Reset)
 	{
+		
 		drawDataset();
-		if (g_OperationType == otAreaFill)
+		if (g_State.g_OperationType == otAreaFill)
 		{
 			//PointFill(p1[0].x, p1[0].y, YELLOW);
 			//BoundaryFill(p1[0].x, p1[0].y, BLACK, YELLOW);
@@ -469,14 +499,6 @@ void display()
 		Reset = false;
 		return;
 	}
-	//if (g_OperationType == otAreaFill)
-	//{
-	//	//PointFill(p1[0].x, p1[0].y, YELLOW);
-	//	BoundaryFill(p1[0].x, p1[0].y, BLACK, YELLOW);
-	//}
-	
-	
-	
 }
 
 

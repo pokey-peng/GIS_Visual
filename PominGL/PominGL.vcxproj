@@ -152,6 +152,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DrawState.cpp" />
     <ClCompile Include="Graphic.cpp" />
     <ClCompile Include="MessageHandler.cpp" />
     <ClCompile Include="MyGeometryLibrary.cpp" />

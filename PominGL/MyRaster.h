@@ -18,5 +18,8 @@ public:
 	static void drawCircleOutline(double x, double y, double r, unsigned color);
 	static void drawEllipse(double xCenter, double yCenter, double width, double height, unsigned color);
 
+	static void ChangeXYToGrid(int& x0, int& y0, int& x1, int& y1);
+	static void ChangeOf_XYs(PixelPoint* Points, int Count);
+
 };
 #endif // !_MYRASTER_H

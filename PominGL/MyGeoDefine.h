@@ -19,7 +19,8 @@ struct _Point2D
 	T x, y;
 };
 
-typedef _Point2D<double> Point2D;
+//typedef _Point2D<double> Point2D;
+typedef _Point2D<int> Point2D;
 
 // 2D包围盒
 template<typename T>
@@ -100,6 +101,7 @@ struct Geometry
 	virtual ~Geometry() {}
 	virtual GeomType getGeomType() = 0; // 获取图形对象类
 	string label;
+	unsigned color;
 };
 struct Geometry2D :Geometry
 {
@@ -169,6 +171,13 @@ struct CircleGeometry :Geometry2D
 		this->y = y;
 		this->r = r;
 	}
+	CircleGeometry(double x, double y, double r, unsigned color)
+	{
+		this->x = x;
+		this->y = y;
+		this->r = r;
+		this->color = color;
+	}
 	~CircleGeometry()
 	{
 		delete this;
@@ -187,12 +196,20 @@ struct EllipseGeometry :Geometry2D
 	{
 		x1 = y1 = x2 = y2 = 0;
 	}
-	EllipseGeometry(double x1, double y1, double x2, double y2)
+	EllipseGeometry(int x1, int y1, int x2, int y2)
 	{
 		this->x1 = x1;
 		this->y1 = y1;
 		this->x2 = x2;
 		this->y2 = y2;
+	}
+	EllipseGeometry(int x1, int y1, int x2, int y2,unsigned color)
+	{
+		this->x1 = x1;
+		this->y1 = y1;
+		this->x2 = x2;
+		this->y2 = y2;
+		this->color = color;
 	}
 
 	virtual GeomType getGeomType() { return gtEllipse; }

@@ -232,39 +232,8 @@ int sign(int val)
 /// <param name="endp">绘制终点坐标</param>
 void MidPointLine(double x0, double y0, double x1, double y1, unsigned color)
 {
-	/*
-	int dex = abs(startp.x - endp.x);
-	int dey = abs(startp.y - endp.y);
-	bool tag = false;
-	// 当直线斜率大于1时
-	if (dex < dey)
-	{
-		std::swap(dex, dey);
-		tag = true;
-	}
-	// x,y增量
-	int dx = sign(endp.x - startp.x); int dy = sign(endp.y - startp.y);
-	int d = dex - dey - dey; // 初始增量
-	int x = startp.x; int y = startp.y; // 起点
-	for (int i = 0; i <= dex; ++i)
-	{
-		setPixel(x, y, g_Color);
-		if (d < 0) // d<0时，x,y分别加上加dx,dy
-		{
-			x += dx; y += dy;
-			d += (dex + dex - dey - dey); // 增量更新2dex-2dey
-		}
-		else
-		{
-			// d>0且斜率大于1时，y更新
-			if (tag == true)
-				y += dy;
-			else // d>0且斜率不大于1时，x更新
-				x += dx;
-			d -= (dey + dey); // 增量更新-2dey
-		}
-	}
-	*/
+	
+
 	int dex = abs(x0 - x1);
 	int dey = abs(y0 - y1);
 	bool tag = false;
@@ -280,7 +249,7 @@ void MidPointLine(double x0, double y0, double x1, double y1, unsigned color)
 	int x = x0; int y = y0; // 起点
 	for (int i = 0; i <= dex; ++i)
 	{
-		setPixel(x, y, color);
+		g_State.drawPixelCB(x, y, color);
 		if (d < 0) // d<0时，x,y分别加上加dx,dy
 		{
 			x += dx; y += dy;
@@ -552,15 +521,16 @@ void HorizonEdgeFill(PixelPoint* data, int size, unsigned color)
 }
 
 /*区域填充算法*/
-
 void PointFill(int x, int y, unsigned newColor)
 {
-	unsigned oldColor = getPixel(x, y);
+	unsigned oldColor = getPixel(x, y); // 获取区域内点旧的颜色
 	PixelPoint startPt = { x, y };
-	PixelPoint AdjPt[4];
-	vector<PixelPoint> AdjPtList;
-	AdjPtList.push_back(startPt);
-	while (!AdjPtList.empty())
+	PixelPoint AdjPt[4];  // 存放四联通区域周边的四个点
+	vector<PixelPoint> AdjPtList; // 设置一个栈存放未填充新颜色的点
+	AdjPtList.push_back(startPt); // 将种子点压入栈
+
+	// 从栈顶取出点填充新颜色，再检查周边四个点，若未填充压入栈中,循环直至栈为空
+	while (!AdjPtList.empty())   
 	{
 		PixelPoint topPt = AdjPtList.back();
 		setPixel(topPt.x, topPt.y, newColor);
@@ -579,6 +549,7 @@ void PointFill(int x, int y, unsigned newColor)
 
 	}
 }
+
 void BoundaryFill(int x, int y, unsigned bdrColor, unsigned newColor)
 {
 	PixelPoint startPt = { x, y };
@@ -606,23 +577,33 @@ void BoundaryFill(int x, int y, unsigned bdrColor, unsigned newColor)
 	}
 }
 
-void SearchLinePint(stack<PixelPoint>& slStack, int xleft, int xright, int y, unsigned bdrColor, unsigned newColor)
+/// <summary>
+/// 搜索上下两行种子点入栈算法,若存在可填充区域,将区域内最右边界作为种子点入栈
+/// </summary>
+/// <param name="slStack">存放每行未填充点的栈</param>
+/// <param name="xleft">当前行区域左边界点</param>
+/// <param name="xright">当前行区域右边界点</param>
+/// <param name="y">上下行y坐标</param>
+/// <param name="bdrColor">边界颜色</param>
+/// <param name="newColor">填充颜色</param>
+void SearchLinePoint(stack<PixelPoint>& slStack, int xleft, int xright, int y, unsigned bdrColor, unsigned newColor)
 {
-	bool span_need_fill = false;
-	unsigned PixelColor;
+
+	bool span_need_fill = false; // 判断xleft与xright之间是否有可填充区域
 	PixelPoint Pt;
+	// 从左边界点开始直到右边界点结束
 	while (xleft <= xright)
 	{
 		span_need_fill = false;
 		//PixelColor = getPixel(xleft, y);
-		while ((getPixel(xleft, y) != bdrColor) && (getPixel(xleft, y) != newColor) && (xleft < xright))
+		while ((getPixel(xleft, y) != bdrColor) && (getPixel(xleft, y) != newColor) && (xleft <= xright))
 		{
 			span_need_fill = true;
 			xleft++;
 		}
 		if (span_need_fill)
 		{
-
+			// 若到达xright点,且为可填充点，则此点入栈,若没有达到，则
 			if ((getPixel(xleft, y) != bdrColor) && (getPixel(xleft, y) != newColor) && (xleft == xright))
 			{
 				Pt = { xleft,y };
@@ -648,26 +629,34 @@ void ScanLineAreaFill(int x, int y, unsigned bdrColor, unsigned newColor)
 {
 	const bool toleft = true;
 	const bool toright = false;
-	int x0, y0, xright, xleft;
-	PixelPoint startPt = { x,y };
+	int x0, y0, xright, xleft; 
+	PixelPoint startPt = { x,y }; // 种子点
 	PixelPoint Pt;
-	stack<PixelPoint> slStack;//堆栈 pixel_stack初始化
-	slStack.push(startPt);    //(x,y)是给定的种子像素
+	stack<PixelPoint> slStack;// 栈
+	slStack.push(startPt);    // 种子点入栈
+
+	// 直至栈为空
 	while (!slStack.empty())
 	{
+		// 取出栈顶元素
 		Pt = slStack.top();
 		slStack.pop();
+
+		// 从栈顶点x,y开始向右和向左填充新颜色，直至遇到边界,并返回填充区域左右边界x坐标
 		x0 = Pt.x;
 		y0 = Pt.y;
 		auto lrFill = [=](int x, int y, bool direct) {if (direct) { while (getPixel(x, y) != bdrColor) { setPixel(x, y, newColor); x -= 1; } return x + 1; }
-		else {
+		else 
+		{
 			while (getPixel(x, y) != bdrColor) { setPixel(x, y, newColor); x += 1; }
 			return x - 1;
 		}};
-		xleft = lrFill(x0, y0, toleft);
-		xright = lrFill(x0, y0, toright);
-		SearchLinePint(slStack, xleft, xright, y0 - 1, bdrColor, newColor);
-		SearchLinePint(slStack, xleft, xright, y0 + 1, bdrColor, newColor);
+		xleft = lrFill(x0, y0, toleft); // 向左填充,返回填充区域左边界x坐标
+		xright = lrFill(x0, y0, toright); // 向右填充,返回填充区域右边界x坐标
+
+		// 向此行的上下两行进行扫描找到种子点入栈
+		SearchLinePoint(slStack, xleft, xright, y0 - 1, bdrColor, newColor);
+		SearchLinePoint(slStack, xleft, xright, y0 + 1, bdrColor, newColor);
 	}//出栈完
 }
 

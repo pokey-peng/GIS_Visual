@@ -1,23 +1,37 @@
 #ifndef _DRAWSTATE_H
 #define _DRAWSTATE_H
+#include "Graphic.h"
+typedef void (*DrawModelCallBack) (int x, int y, Color color);
+enum OperationType {
+	otNone, otDrawRectangle, otDrawRectangleOutline,
+	otDrawLine, otDrawPolyline, otDrawPolygon, otDrawPolygonOutline,
+	otDrawCircle, otDrawEllipse,
+	//像素画图
+	otPixel, ot10Network, ot20Network,
+	// 填充
+	otAreaFill
 
+};
+enum DrawModeType { dmPixel, dmGrid, dmGemotry };
+enum DrawLineMethodType { dlDDA, dlMidBresenham };
+enum DrawPolygonMethodType { dpXScanline, dpAET, dpEdgeFill };
+enum FillMethodType { seedFill, scanFill };
 struct State
 {
 	
-	enum DrawModeType{dmPixel, dmGrid, dmGemotry};
+	OperationType g_OperationType = otNone;
+	DrawModelCallBack drawPixelCB = setPixel;
 	// 绘制模式
 	DrawModeType DrawMode;
+	int GridWidth = 10; // 网格宽
+	int GridHeight = 10; // 网格高
 
-	int GridWidth; // 网格宽
-	int GridHeight; // 网格高
-
-	enum DrawLineMethodType{dlDDA, dlMidBresenham};
+	Color GridColor1 = WHITE;
+	Color GridColor2 = GREEN;
 
 	// 画线方法
 	DrawLineMethodType DrawLineMethod;
 	// 多边形填充算法
-	enum DrawPolygonMethodType{dpXScanline, dpAET, dpEdgeFill};
-
 	DrawPolygonMethodType DrawPolygonMethod;
 	// 边表节点
 	struct tagEDGE {
@@ -27,9 +41,12 @@ struct State
 	};
 
 	// 区域填充算法
-	enum FillMethodType{seedFill, scanFill};
+	
 
 	FillMethodType FillMethod;
+
+	State();
     
 };
+extern State g_State;
 #endif // !_DRAWSTATE_H

@@ -875,20 +875,20 @@ public:
 
 	void mouseDown(UINT wMsg, WPARAM wParam, LPARAM lParam)
 	{
-		//if (wMsg == WM_LBUTTONDOWN)
-		//{
-		//	if (rubberMode == rmNone) return;
+		/*if (wMsg == WM_LBUTTONDOWN)
+		{
+			if (rubberMode == rmNone) return;
 
-		//	oldROP2Mode = SetROP2(g_hDC, R2_NOT);
-		//	SelectObject(g_hDC, GetStockObject(DC_PEN));
-		//	oldPenColor = SetDCPenColor(g_hDC, penColor);
+			oldROP2Mode = SetROP2(g_hDC, R2_NOT);
+			SelectObject(g_hDC, GetStockObject(DC_PEN));
+			oldPenColor = SetDCPenColor(g_hDC, penColor);
 
-		//	pt1.x = LOWORD(lParam);
-		//	pt1.y = HIWORD(lParam);
+			pt1.x = LOWORD(lParam);
+			pt1.y = HIWORD(lParam);
 
-		//	pt2 = pt1;
-		//	startDrawing = true;
-		//}
+			pt2 = pt1;
+			startDrawing = true;
+		}*/
 	}
 
 	void mouseMove(UINT wMsg, WPARAM wParam, LPARAM lParam)

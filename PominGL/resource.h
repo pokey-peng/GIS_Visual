@@ -25,14 +25,19 @@
 #define ID_DRAWMODE_GRID_20             32783
 #define ID_RESET                        32784
 #define ID_AREA_FILL                    32785
+#define ID_32786                        32786
+#define ID_COLOR_RED                    32787
+#define ID_COLOR_GREEN                  32788
+#define ID_COLOR_BLUE                   32789
+#define ID_DRAWMODEL_GEOMETRY           32790
 #define IDC_STATIC                      -1
 
-// Next default values for new objects 
+// Next default values for new objects
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        129
-#define _APS_NEXT_COMMAND_VALUE         32786
+#define _APS_NEXT_COMMAND_VALUE         32791
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
